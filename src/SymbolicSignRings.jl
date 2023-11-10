@@ -233,9 +233,9 @@ iseven(a::SymbolicSigns) = iseven(ZZ2(a))
 isodd(a::SymbolicSigns) = isodd(ZZ2(a))
 
 # many conversion methods are needed to avoid ambiguities
-convert(::Type{SymbolicSigns{T,R}}, a::SymbolicSigns{T,R}) where {T,R} = a
 convert(::Type{SymbolicSigns{T,R}}, a::SymbolicSigns{T}) where {T,R} =
     linear_convert(SymbolicSigns{T,R}, a)
+# convert(::Type{S}, a::SymbolicSigns) where S <: SymbolicSigns = linear_convert(S, a)
 convert(::Type{SymbolicSigns{T,R}}, s::Sign{T}) where {T,R} = SymbolicSigns{T,R}(s => one(R))
 convert(::Type{SymbolicSigns{T,R}}, c) where {T,R} = SymbolicSigns{T,R}(one(Sign{T}) => c)
 
