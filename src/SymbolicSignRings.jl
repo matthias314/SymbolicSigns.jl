@@ -30,12 +30,12 @@ SignExpTerm(x::T...) where T = SignExpTerm{T}(x...)
 function show(io::IO, t::T) where T <: SignExpTerm
     if t.n == 2
         xr = string(t.x)
-	yr = string(t.y)
-	if xr <= yr
+        yr = string(t.y)
+        if xr <= yr
             print(io, '|', xr, "||", yr, '|')
-	else
+        else
             print(io, '|', yr, "||", xr, '|')
-	end
+        end
     elseif t.n == 1
         print(io, '|', t.x, '|')
     else
