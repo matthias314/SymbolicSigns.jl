@@ -1,5 +1,5 @@
-name = "SymbolicSignRings"
-uuid = "6762dbc5-e7a6-4650-948f-ebe903fd3edb"
+name = "SymbolicSigns"
+uuid = "27726e8a-9648-448d-a8f7-a27e0ac037d6"
 authors = ["matthias314"]
 version = "0.1.0"
 
