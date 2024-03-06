@@ -1,3 +1,15 @@
+"""
+    SymbolicSigns
+
+This package provides types to work with symbolic signs that often come up
+in differential homological algebra and other graded contexts. Specifically,
+given any commutative ring `R` and any type `T`, the package allows to define
+a new commutative ring `SymbolicSignRing{T,R}` that extends `R` by expressions
+of the form `(-1)^|x|` and `(-1)^(|x|*|y|)` where `|x|` and `|y|` represent
+the symbolic degrees of `x::T` and `y::T`, respectively.
+
+See also [`SymbolicSignRing`](@ref).
+"""
 module SymbolicSigns
 
 export DegTerm, SignExp, Sign, signexp, SymbolicSignRing
@@ -15,6 +27,49 @@ import LinearCombinations: Zero, termcoeff, signed, sign_type, show_summand
 # DegTerm
 #
 
+"""
+    DegTerm{T}
+
+This type represents a *degree term* representing the degree of an element from `T`
+or the product of the degrees of two elements from `T`. There is also a version
+with no elements from `T` to represent the constant `1` as a degree term.
+
+See also [`SignExp`](@ref).
+
+# Examples
+```jldoctest
+julia> dx = DegTerm(:x)
+|x|
+
+julia> typeof(dx)
+DegTerm{Symbol}
+
+julia> dy = DegTerm(:y)
+|y|
+
+julia> dx*dy
+|x||y|
+
+julia> dx*dy == DegTerm(:x, :y)
+true
+
+julia> dx*dy == DegTerm(:y, :x)   # order doesn't matter
+true
+
+julia> dx*dx   # note the simplification
+|x|
+
+julia> dz = DegTerm(:z); dx*dy*dz
+ERROR: cannot multiply two DegTerm's with more than 2 factors in total
+[...]
+
+julia> d1 = DegTerm{Symbol}()
+1
+
+julia> d1 == one(dx)
+true
+```
+"""
 struct DegTerm{T}
     n::Int8
     x::T
@@ -103,6 +158,29 @@ end
 # SignExp
 #
 
+"""
+    SignExp{T} == Linear{DegTerm{T}, ZZ2}
+
+A *sign exponent* is a linear combination of degree terms with coefficients in `ZZ2`.
+
+See also [`LinearCombinations.Linear`](https://matthias314.github.io/LinearCombinations.jl/stable/linear/#LinearCombinations.Linear),
+`Modulo2.ZZ2`, [`DegTerm`](@ref), [`Sign`](@ref).
+
+# Examples
+```jldoctest
+julia> se = dx + dx*dy + 1
+|x||y|+|x|+1
+
+julia> typeof(se) == SignExp{Symbol}
+true
+
+julia> se == SignExp(dx => 1, dx*dy => -1, DegTerm{Symbol}() => -1)
+true
+
+julia> SignExp(dx) == SignExp(dx => 1)   # note the short form
+true
+```
+"""
 const SignExp{T} = Linear{DegTerm{T}, ZZ2}
 
 SignExp(t::Pair{DegTerm{T}}...) where T = SignExp{T}(t)
@@ -144,6 +222,31 @@ convert(::Type{SignExp{T}}, n::Number) where T = SignExp{T}(n)
 # Sign
 #
 
+"""
+    Sign{T}
+
+This is a wrapper around `SignExp{T}` that allows to use a multiplicative notation.
+
+See also [`SignExp`](@ref), [`SymbolicSignRing`](@ref).
+
+# Examples
+```jldoctest
+julia> s1 = Sign(dx + dx*dy)
+(-1)^(|x||y|+|x|)
+
+julia> s2 = Sign(dy + 1)
+(-1)^(|y|+1)
+
+julia> s1*s2
+(-1)^(|y|+|x||y|+|x|+1)
+
+julia> isone(s1^2)
+true
+
+julia> convert(ZZ2, s1)
+1
+```
+"""
 struct Sign{T}
     e::SignExp{T}
 end
@@ -197,6 +300,31 @@ show_summand(io::IO, s::Sign, cs) = isone(s) ? print(io, cs) : print(io, cs, '*'
 # SymbolicSignRing
 #
 
+"""
+    LinearCombinations.termcoeff((s, c)::Pair{Sign{T}}) where T -> Pair{Sign{T}}
+
+Convert the term-coefficient pair `(s, c)` to one where the exponent of the sign
+has no constant term. If the exponent of `s` has a constant term, then it is
+removed and instead the sign of `c` changed.
+
+This is important to make linear combinations of signs unique.
+
+See also [`LinearCombinations.termcoeff`](https://matthias314.github.io/LinearCombinations.jl/stable/extensions/#LinearCombinations.termcoeff).
+
+# Examples
+```jldoctest
+julia> using LinearCombinations: termcoeff
+
+julia> dx = DegTerm(:x)
+|x|
+
+julia> termcoeff(Sign(dx) => 2)
+(-1)^(|x|) => 2
+
+julia> termcoeff(Sign(dx+1) => 2)
+(-1)^(|x|) => -2
+```
+"""
 function termcoeff(sc::Pair{Sign{T}}) where T
     s, c = sc
     x = DegTerm{T}()
@@ -207,6 +335,42 @@ function termcoeff(sc::Pair{Sign{T}}) where T
     end
 end
 
+"""
+    SymbolicSignRing{T,R} = Linear{Sign{T},R}
+
+This type extends the commutative ring `R` by elements of type `Sign{T}`.
+Elements are formal linear combinations with terms of type `Sign{T}` and
+coefficients of type `R`.
+
+See also [`LinearCombinations.Linear`](https://matthias314.github.io/LinearCombinations.jl/stable/linear/#LinearCombinations.Linear),
+[`Sign`](@ref).
+
+# Examples
+```jldoctest
+julia> dx, dy = DegTerm(:x), DegTerm(:y)
+(|x|, |y|)
+
+julia> s1, s2 = Sign(dx + dx*dy), Sign(dy + 1)
+((-1)^(|x||y|+|x|), (-1)^(|y|+1))
+
+julia> a = Linear(s1 => 2, s2 => -1)
+(-1)^(|y|)+2*(-1)^(|x||y|+|x|)
+
+julia> convert(ZZ2, a)
+1
+```
+Note that the extended ring has zero divisors:
+```jldoctest
+julia> a = Linear(Sign(dx) => 1, Sign(dy) => 1)
+(-1)^(|y|)+(-1)^(|x|)
+
+julia> b = Linear(Sign(dx) => 1, Sign(dy) => -1)
+-(-1)^(|y|)+(-1)^(|x|)
+
+julia> a*b
+0
+```
+"""
 const SymbolicSignRing{T,R} = Linear{Sign{T},R}
 
 # SymbolicSignRing{T,R}(itr...) where {T,R} = Linear(Dict{Hashed{Sign{T}},R}(hashedtermcoeff(xc) for xc in itr...))
