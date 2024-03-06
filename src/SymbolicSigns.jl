@@ -358,6 +358,12 @@ julia> a = Linear(s1 => 2, s2 => -1)
 
 julia> convert(ZZ2, a)
 1
+
+julia> 3.0*a
+6.0*(-1)^(|x|+|x||y|)+3.0*(-1)^(|y|)
+
+julia> ZZ2(1)*a
+1
 ```
 Note that the extended ring has zero divisors:
 ```jldoctest
@@ -387,6 +393,14 @@ SymbolicSignRing(x...) = Linear(x...)
 
 *(s::Sign{T}, c::R) where {T,R<:Number} = SymbolicSignRing{T,R}(s => c)
 *(c::R, s::Sign{T}) where {T,R<:Number} = s*c
+
+function *(c::S, a::SymbolicSignRing{T,R}) where {S,T,R}
+    if has_char2(S)
+        c*sum(coeffs(a))
+    else
+        invoke(*, Tuple{S,AbstractLinear{Sign{T},R}}, c, a)
+    end
+end
 
 function convert(::Type{ZZ2}, a::SymbolicSignRing)
     # error("converting: $a::$(typeof(a))")
