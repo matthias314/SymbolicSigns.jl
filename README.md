@@ -7,6 +7,9 @@ a new commutative ring `SymbolicSignRing{T,R}` that extends `R` by expressions
 of the form `(-1)^|x|` and `(-1)^(|x|*|y|)` where `|x|` and `|y|` represent
 the symbolic degrees of `x::T` and `y::T`, respectively.
 
+The symbolic signs `(-1)^(|x|*|y|)` and `(-1)^(|y|*|x|)` are treated as equal,
+and `(-1)^(|x|*|x|)` is simplified to `(-1)^|x|`.
+
 ## Examples
 
 Signs usually come up whenever two graded objects are swapped. Here is an example

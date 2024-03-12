@@ -8,7 +8,10 @@ a new commutative ring `SymbolicSignRing{T,R}` that extends `R` by expressions
 of the form `(-1)^|x|` and `(-1)^(|x|*|y|)` where `|x|` and `|y|` represent
 the symbolic degrees of `x::T` and `y::T`, respectively.
 
-See also [`SymbolicSignRing`](@ref).
+The symbolic signs `(-1)^(|x|*|y|)` and `(-1)^(|y|*|x|)` are treated as equal,
+and `(-1)^(|x|*|x|)` is simplified to `(-1)^|x|`.
+
+See also [`SymbolicSignRing`](@ref), [`DegTerm`](@ref).
 """
 module SymbolicSigns
 
@@ -30,9 +33,16 @@ import LinearCombinations: Zero, termcoeff, signed, sign_type, show_summand
 """
     DegTerm{T}
 
+    DegTerm{T}() where T
+    DegTerm(x::T) where T
+    DegTerm(x::T, y::T) where T
+
 This type represents a *degree term* representing the degree of an element from `T`
 or the product of the degrees of two elements from `T`. There is also a version
 with no elements from `T` to represent the constant `1` as a degree term.
+
+The degree terms `DegTerm(x, y)` and `DegTerm(y, x)` are treated as equal,
+and `DegTerm(x, x)` is simplified to `DegTerm(x)`.
 
 See also [`SignExp`](@ref).
 
