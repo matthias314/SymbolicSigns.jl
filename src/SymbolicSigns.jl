@@ -279,6 +279,8 @@ end
 
 signexp(s::Sign) = s.e
 
+convert(::Type{S}, s::Sign) where S <: Sign = S(signexp(s))
+
 copy(s::Sign) = Sign(copy(s.e))
 
 length(s::Sign) = length(signexp(s))
@@ -307,7 +309,7 @@ end
 
 ^(s::Sign, n::Integer) = isodd(n) ? s : one(s)
 
-convert(::Type{ZZ2}, ::Sign) = one(ZZ2)
+Modulo2.ZZ2(::Sign) = one(ZZ2)
 
 iseven(::Sign) = true
 isodd(::Sign) = false
@@ -407,6 +409,11 @@ const SymbolicSignRing{T,R} = Linear{Sign{T},R}
 # needed because "SymbolicSignRing" means "SymbolicSignRing{T,R} where {T,R}"
 SymbolicSignRing(x::Pair{S}...) where S <: Sign = Linear{S}(x...)
 
+Modulo2.ZZ2(a::SymbolicSignRing) = sum(ZZ2, coeffs(a); init = zero(ZZ2))
+
+iseven(a::SymbolicSignRing) = isone(ZZ2(a))
+isodd(a::SymbolicSignRing) = iszero(ZZ2(a))
+
 *(s::Sign{T}, c::R) where {T,R<:Number} = SymbolicSignRing{T,R}(s => c)
 *(c::R, s::Sign{T}) where {T,R<:Number} = s*c
 
@@ -421,7 +428,7 @@ for op in (:(+), :(-), :(*))
     @eval function $op(a::SymbolicSignRing{T}, c) where T
         S = typeof(c)
         if has_char2(S)
-            $op(convert(ZZ2, a), c)
+            $op(ZZ2(a), c)
         elseif $op in (+, -) && c isa Number
             addmul(a, one(Sign{T}), $op(c))
         else
@@ -436,7 +443,7 @@ end
 function -(c, a::SymbolicSignRing{T,R}) where {T,R}
     S = typeof(c)
     if has_char2(S)
-        convert(ZZ2, a) + c
+        ZZ2(a) + c
     elseif c isa Number
         addmul!((-one(R)*one(c))*a, one(Sign{T}), c)
     else
@@ -444,20 +451,10 @@ function -(c, a::SymbolicSignRing{T,R}) where {T,R}
     end
 end
 
-function convert(::Type{ZZ2}, a::SymbolicSignRing)
-    # error("converting: $a::$(typeof(a))")
-    sum(ZZ2, coeffs(a); init = zero(ZZ2))
-end
-
-iseven(a::SymbolicSignRing) = iseven(ZZ2(a))
-isodd(a::SymbolicSignRing) = isodd(ZZ2(a))
-
-# many conversion methods are needed to avoid ambiguities
-convert(::Type{SymbolicSignRing{T,R}}, a::SymbolicSignRing{T}) where {T,R} =
-    linear_convert(SymbolicSignRing{T,R}, a)
-# convert(::Type{S}, a::SymbolicSignRing) where S <: SymbolicSignRing = linear_convert(S, a)
-convert(::Type{SymbolicSignRing{T,R}}, s::Sign{T}) where {T,R} = SymbolicSignRing{T,R}(s => one(R))
-convert(::Type{SymbolicSignRing{T,R}}, c) where {T,R} = SymbolicSignRing{T,R}(one(Sign{T}) => c)
+convert(::Type{SR}, a::SymbolicSignRing{T}) where {T, SR<:SymbolicSignRing{T}} = linear_convert(SR, a)
+convert(::Type{SR}, s::Sign{T}) where {T, R, SR<:SymbolicSignRing{T,R}} = SR(s => one(R))
+convert(::Type{SR}, c::Number) where {T, SR<:SymbolicSignRing{T}} = SR(one(Sign{T}) => c)
+convert(::Type{SR}, s::LCSign) where {T, R, SR<:SymbolicSignRing{T,R}} = SR(one(Sign{T}) => convert(R, s))
 
 # promote_rule(::Type{SymbolicSignRing{T,R}}, ::Type{R}) where {T,R} = SymbolicSignRing{T,R}
 # promote_rule(::Type{SymbolicSignRing{T,R}}, ::Type{Sign{T}}) where {T,R} = SymbolicSignRing{T,R}
