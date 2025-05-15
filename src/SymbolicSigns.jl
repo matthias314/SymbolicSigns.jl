@@ -469,11 +469,16 @@ convert(::Type{SR}, s::Sign{T}) where {T, R, SR<:SymbolicSignRing{T,R}} = SR(s =
 convert(::Type{SR}, c::Number) where {T, SR<:SymbolicSignRing{T}} = SR(one(Sign{T}) => c)
 convert(::Type{SR}, s::LCSign) where {T, R, SR<:SymbolicSignRing{T,R}} = SR(one(Sign{T}) => convert(R, s))
 
-# promote_rule(::Type{SymbolicSignRing{T,R}}, ::Type{R}) where {T,R} = SymbolicSignRing{T,R}
-# promote_rule(::Type{SymbolicSignRing{T,R}}, ::Type{Sign{T}}) where {T,R} = SymbolicSignRing{T,R}
+function promote_rule(::Type{SymbolicSignRing{T,R}}, ::Type{S}) where {T,R,S}
+    U = promote_type(R, S)
+    has_char2(S) ? U : SymbolicSignRing{T,U}
+end
 
-promote_rule(::Type{<:Sign}, ::Type{ZZ2}) = ZZ2
-promote_rule(::Type{SymbolicSignRing{T,R}}, ::Type{ZZ2}) where {T,R} = promote_rule(R, ZZ2)
+promote_rule(::Type{SymbolicSignRing{T,R}}, ::Type{Sign{T}}) where {T,R} = SymbolicSignRing{T,R}
+promote_rule(::Type{SymbolicSignRing{T,R}}, ::Type{SymbolicSignRing{T,S}}) where {T,R,S} = SymbolicSignRing{T,promote_type(R,S)}
+
+# it's important that Sign{T} is again the second argument
+promote_rule(::Type{R}, ::Type{Sign{T}}) where {T,R} = has_char2(R) ? R : SymbolicSignRing{T,R}
 
 sign_type(::Type{SignExp{T}}) where T = SymbolicSignRing{T,LCSign}
 sign_type(::Type{DegTerm{T}}) where T = SymbolicSignRing{T,LCSign}
