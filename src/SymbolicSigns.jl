@@ -263,7 +263,17 @@ end
 
 Sign(args...) = Sign(SignExp(args...))
 
-show(io::IO, s::Sign) = print(io, isone(s) ? "1" : "(-1)^($(repr(signexp(s))))")
+function show(io::IO, s::Sign)
+    if isone(s)
+        print(io, '1')
+    else
+        e = signexp(s)
+        print(io, "(-1)^")
+        length(e) > 1 && print(io, '(')
+        show(IOContext(io, :compact => true), MIME"text/plain"(), e)
+        length(e) > 1 && print(io, ')')
+    end
+end
 
 @struct_equal_hash Sign{T} where T
 
@@ -304,7 +314,12 @@ isodd(::Sign) = false
 
 @linear_broadcastable Sign
 
-show_summand(io::IO, s::Sign, cs) = isone(s) ? print(io, cs) : print(io, cs, '*', s)
+function show_summand(io::IO, s::Sign, cs)
+    show(io, MIME"text/plain"(), cs)
+    isone(s) && return
+    print(io, '*')
+    show(io, MIME"text/plain"(), s)
+end
 
 #
 # SymbolicSignRing
