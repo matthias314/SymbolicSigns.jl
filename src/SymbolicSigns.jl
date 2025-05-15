@@ -404,11 +404,8 @@ julia> a*b
 """
 const SymbolicSignRing{T,R} = Linear{Sign{T},R}
 
-# SymbolicSignRing{T,R}(itr...) where {T,R} = Linear(Dict{Hashed{Sign{T}},R}(hashedtermcoeff(xc) for xc in itr...))
-
-# the next two definitions are necessary because "SymbolicSignRing" means "SymbolicSignRing{T,R} where {T,R}"
-SymbolicSignRing{T,R}(xc::Pair...) where {T,R} = SymbolicSignRing{T,R}(xc)
-SymbolicSignRing(x...) = Linear(x...)
+# needed because "SymbolicSignRing" means "SymbolicSignRing{T,R} where {T,R}"
+SymbolicSignRing(x::Pair{S}...) where S <: Sign = Linear{S}(x...)
 
 +(a::SymbolicSignRing{T,R}, c::R) where {T,R} = addmul(a, one(Sign{T}), c)
 +(c::R, a::SymbolicSignRing{T,R}) where {T,R} = a+c
