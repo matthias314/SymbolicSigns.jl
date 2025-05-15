@@ -197,6 +197,9 @@ SignExp(t::Pair{DegTerm{T}}...) where T = SignExp{T}(t)
 SignExp(t::DegTerm{T}...) where T = SignExp{T}(map(u -> u => one(ZZ2), t))
 SignExp{T}(n::Number) where T = Linear(one(DegTerm{T}) => ZZ2(n))
 
++(t::DegTerm) = t
+-(t::DegTerm) = t
+
 +(t::DegTerm{T}, u::DegTerm{T}) where T =
     t == u ? zero(SignExp{T}) : SignExp{T}(t => one(ZZ2), u => one(ZZ2))
 
