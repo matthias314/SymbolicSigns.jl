@@ -407,20 +407,40 @@ const SymbolicSignRing{T,R} = Linear{Sign{T},R}
 # needed because "SymbolicSignRing" means "SymbolicSignRing{T,R} where {T,R}"
 SymbolicSignRing(x::Pair{S}...) where S <: Sign = Linear{S}(x...)
 
-+(a::SymbolicSignRing{T,R}, c::R) where {T,R} = addmul(a, one(Sign{T}), c)
-+(c::R, a::SymbolicSignRing{T,R}) where {T,R} = a+c
-
--(a::SymbolicSignRing{T,R}, c::R) where {T,R} = a + (-c)
--(c::R, a::SymbolicSignRing{T,R}) where {T,R} = addmul!((-a), one(Sign{T}), c)
-
 *(s::Sign{T}, c::R) where {T,R<:Number} = SymbolicSignRing{T,R}(s => c)
 *(c::R, s::Sign{T}) where {T,R<:Number} = s*c
 
-function *(c::S, a::SymbolicSignRing{T,R}) where {S,T,R}
+*(a::SymbolicSignRing{T}, s::Sign{T}) where T = LinearCombinations.mul(a, s)
+
+for op in (:(+), :(-), :(*))
+    @eval $op(a::SymbolicSignRing, b::SymbolicSignRing) = invoke($op, Tuple{AbstractLinear, AbstractLinear}, a, b)
+    if op in (:(+), :(-))
+        @eval $op(a::SymbolicSignRing{T,R}, s::Sign{T}) where {T,R} = addmul(a, s, $op(one(R)))
+        @eval $op(s::Sign{T}, a::SymbolicSignRing{T}) where T = add!($op(a), s)
+    end
+    @eval function $op(a::SymbolicSignRing{T}, c) where T
+        S = typeof(c)
+        if has_char2(S)
+            $op(convert(ZZ2, a), c)
+        elseif $op in (+, -) && c isa Number
+            addmul(a, one(Sign{T}), $op(c))
+        else
+            R = coefftype(a)
+            invoke($op, Tuple{AbstractLinear{Sign{T},R}, S}, a, c)
+        end
+    end
+end
+
+*(a::SymbolicSignRing, s::LCSign) = isone(s) ? a : -a
+
+function -(c, a::SymbolicSignRing{T,R}) where {T,R}
+    S = typeof(c)
     if has_char2(S)
-        c*sum(coeffs(a))
+        convert(ZZ2, a) + c
+    elseif c isa Number
+        addmul!((-one(R)*one(c))*a, one(Sign{T}), c)
     else
-        invoke(*, Tuple{S,AbstractLinear{Sign{T},R}}, c, a)
+        invoke(-, Tuple{S, AbstractLinear{Sign{T},R}}, c, a)
     end
 end
 
