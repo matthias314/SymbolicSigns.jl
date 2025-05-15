@@ -291,9 +291,17 @@ iterate(s::Sign, state...) = iterate(signexp(s), state...)
 
 iszero(::Sign) = false
 
-+(s::Sign) = s
-# do we need this?
-# -(s::Sign) = SymbolicSignRing(s => -LinearCombinations.ONE)
++(s::Sign) = copy(s)
+-(s::Sign{T}) where T = SymbolicSignRing{T}(s => -1)
+
++(s::Sign{T}, t::Sign{T}) where T = SymbolicSignRing{T}(s => 1, t => 1)
+-(s::Sign{T}, t::Sign{T}) where T = SymbolicSignRing{T}(s => 1, t => -1)
+
++(c, s::Sign{T}) where T = Linear(s => 1, one(Sign{T}) => c)
++(s::Sign, c) = c+s
+
+-(c, s::Sign{T}) where T = Linear(s => -1, one(Sign{T}) => c)
+-(s::Sign{T}, c) where T = Linear(s => 1, one(Sign{T}) => -c)
 
 isone(s::Sign) = iszero(signexp(s))
 
@@ -310,6 +318,11 @@ end
 ^(s::Sign, n::Integer) = isodd(n) ? s : one(s)
 
 Modulo2.ZZ2(::Sign) = one(ZZ2)
+
+for op in (:(+), :(-), :(*))
+    @eval $op(c::ZZ2, s::Sign) = $op(c, ZZ2(s))
+    @eval $op(s::Sign, c::ZZ2) = $op(ZZ2(s), c)
+end
 
 iseven(::Sign) = true
 isodd(::Sign) = false
