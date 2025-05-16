@@ -122,6 +122,18 @@ function show(io::IO, ::MIME"text/plain", t::DegTerm)
     end
 end
 
+function convert(::Type{D}, t::DegTerm) where D <: DegTerm
+    if t isa D
+        t
+    elseif t.n == 0
+        D()
+    elseif t.n == 1
+        D(t.x)
+    else
+        D(t.x, t.y)
+    end
+end
+
 length(t::DegTerm)::Int = t.n
 
 eltype(t::DegTerm{T}) where T = T
