@@ -252,8 +252,7 @@ end
 *(c::Number, t::DegTerm) = SignExp(t => c)
 *(t::DegTerm, c::Number) = c*t
 
-signed(e::Union{SignExp,DegTerm}, c) = Sign(e)*c
-signed(::Union{SignExp, DegTerm}, c::ZZ2) = c
+signed(e::Union{SignExp,DegTerm}, c::R) where R = has_char2(R) ? c : Sign(e)*c
 
 convert(::Type{SignExp{T}}, n::Number) where T = SignExp{T}(n)
 
