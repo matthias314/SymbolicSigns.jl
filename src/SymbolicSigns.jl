@@ -92,7 +92,21 @@ end
 
 DegTerm(x::T...) where T = DegTerm{T}(x...)
 
-function show(io::IO, t::T) where T <: DegTerm
+function show(io::IO, t::DegTerm{T}) where T
+    print(io, "DegTerm")
+    if get(io, :typeinfo, Any) != DegTerm{T} &&
+            !((t.n == 1 && typeof(t.x) == T) || (t.n == 2 && typeof(t.x) == T && typeof(t.y) == T))
+        print(io, '{', T, '}')
+    end
+    # we cannot use join because it would print 'x' and :x as "x"
+    # TODO: shall we order x and y?
+    print(io, '(')
+    t.n >= 1 && show(io, t.x)
+    t.n == 2 && (print(io, ", "); show(io, t.y))
+    print(io, ')')
+end
+
+function show(io::IO, ::MIME"text/plain", t::DegTerm)
     if t.n == 2
         xr = string(t.x)
         yr = string(t.y)
@@ -266,7 +280,13 @@ end
 
 Sign(args...) = Sign(SignExp(args...))
 
-function show(io::IO, s::Sign)
+function show(io::IO, s::Sign{T}) where T
+    print(io, "Sign(")
+    show(io, s.e)
+    print(io, ')')
+end
+
+function show(io::IO, ::MIME"text/plain", s::Sign)
     if isone(s)
         print(io, '1')
     else
@@ -276,6 +296,7 @@ function show(io::IO, s::Sign)
         show(IOContext(io, :compact => true), MIME"text/plain"(), e)
         length(e) > 1 && print(io, ')')
     end
+    nothing
 end
 
 @struct_equal_hash Sign{T} where T
