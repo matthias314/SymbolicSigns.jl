@@ -160,12 +160,12 @@ function ==(t::DegTerm{T}, u::DegTerm{T}) where T
     end
 end
 
-function hash(t::T, h::UInt) where T <: DegTerm
-    h = hash(T, h)
+function hash(t::DegTerm, h::UInt)
+    h = StructEqualHash.typehash(DegTerm, h)
     if t.n == 2
-        hash(t.x, h) * hash(t.y, h)
+        h ⊻ hash(t.x) ⊻ hash(t.y)
     elseif t.n == 1
-        hash(t.x, h)
+        h ⊻ hash(t.x)
     else
         h
     end
