@@ -1,5 +1,5 @@
 """
-    SymbolicSigns
+    $(@__MODULE__)
 
 This package provides types to work with symbolic signs that often come up
 in differential homological algebra and other graded contexts. Specifically,
