@@ -539,7 +539,8 @@ promote_rule(::Type{WithSigns{T,R}}, ::Type{WithSigns{T,S}}) where {T,R,S} = Wit
 # it's important that Sign{T} is again the second argument
 promote_rule(::Type{R}, ::Type{Sign{T}}) where {T,R} = has_char2(R) ? R : WithSigns{T,R}
 
-LinearCombinations.signtype(::Type{DegSum{T}}) where T = WithSigns{T,LinearCombinations.Sign}
-LinearCombinations.signtype(::Type{Deg{T}}) where T = WithSigns{T,LinearCombinations.Sign}
+promote_rule(::Type{LinearCombinations.Sign}, ::Type{Sign{T}}) where T = WithSigns{T,Int}
+
+LinearCombinations.signtype(::Type{<:Union{Deg{T},DegSum{T}}}) where T = Sign{T}
 
 end # module
