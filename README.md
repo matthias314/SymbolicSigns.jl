@@ -29,10 +29,11 @@ julia> deg('a'), deg('c')
 (1, 3)
 
 julia> t = Tensor('a', 'c')
-a⊗c
+'a'⊗'c'
 
 julia> swap(t)
--c⊗a
+Linear1{Tensor{Tuple{Char, Char}}, Int64} with 1 term:
+-'c'⊗'a'
 ```
 We now do the same with symbolic signs. The computation of the sign out of the degrees
 is done under the hood here, but it illustrates the functionality of the package.
@@ -43,26 +44,27 @@ julia> using LinearCombinations, SymbolicSigns
 julia> LinearCombinations.deg(x::Char) = Deg(x)
 
 julia> deg('a'), deg('c')
-(|a|, |c|)
+(Deg('a'), Deg('c'))
 
 julia> t = Tensor('a', 'c')
-a⊗c
+'a'⊗'c'
 
 julia> b = swap(t)
-(-1)^(|a||c|)*c⊗a
+Linear1{Tensor{Tuple{Char, Char}}, Linear{Sign{Char}, Int64}} with 1 term:
+(-1)^|a||c|*'c'⊗'a'
 
 julia> coefftype(b) == WithSigns{Char,Int}
 true
 
 julia> swap(b)
-a⊗c
+Linear1{Tensor{Tuple{Char, Char}}, Linear{Sign{Char}, Int64}} with 1 term:
+'a'⊗'c'
 ```
 Similarly, signs come up when moving functions past tensor factors.
 We define a linear function `f` of degree 1 and let `g` be the
 tensor product of `f` with itself.
 ```julia
-julia> @linear f; f(x::Char) = uppercase(x)
-f (generic function with 2 methods)
+julia> @linear f; f(x::Char) = uppercase(x);
 
 julia> LinearCombinations.deg(::typeof(f)) = 1
 
@@ -70,17 +72,20 @@ julia> g = Tensor(f, f)
 f⊗f
 
 julia> g(t)
-(-1)^(|a|)*A⊗C
+Linear{Tensor{Tuple{Char, Char}}, Linear{Sign{Char}, LinearCombinations.Sign}} with 1 term:
+(-1)^|a|*'A'⊗'C'
 
 julia> g(swap(t))
-(-1)^(|a||c|+|c|)*C⊗A
+Linear{Tensor{Tuple{Char, Char}}, Linear{Sign{Char}, Int64}} with 1 term:
+(-1)^(|c|+|a||c|)*'C'⊗'A'
 ```
 We can also give `f` a symbolic degree.
 ```julia
 julia> LinearCombinations.deg(::typeof(f)) = Deg('f')
 
 julia> g(t)
-(-1)^(|a||f|)*A⊗C
+Linear{Tensor{Tuple{Char, Char}}, Linear{Sign{Char}, LinearCombinations.Sign}} with 1 term:
+(-1)^|a||f|*'A'⊗'C'
 ```
 Here is an example showing how sign expressions are actually built.
 ```julia
@@ -91,17 +96,21 @@ julia> dc = Deg('c')
 |c|
 
 julia> e = dc + da*dc
+Linear{Deg{Char}, Modulo2.ZZ2} with 2 terms:
 |c|+|a||c|
 
 julia> s1 = Sign(da)
-(-1)^(|a|)
+(-1)^|a|
 
 julia> s2 = 2*Sign(e)
+Linear{Sign{Char}, Int64} with 1 term:
 2*(-1)^(|c|+|a||c|)
 
 julia> s1-s2
--2*(-1)^(|c|+|a||c|)+(-1)^(|a|)
+Linear{Sign{Char}, Int64} with 2 terms:
+(-1)^|a|-2*(-1)^(|c|+|a||c|)
 
 julia> s1*(s1-s2)
+Linear{Sign{Char}, Int64} with 2 terms:
 1-2*(-1)^(|a|+|c|+|a||c|)
 ```
