@@ -252,7 +252,7 @@ end
 *(c::Number, t::DegTerm) = SignExp(t => c)
 *(t::DegTerm, c::Number) = c*t
 
-signed(e::Union{SignExp,DegTerm}, c::R) where R = has_char2(R) ? c : Sign(e)*c
+signed(e::Union{SignExp,DegTerm}, c) = has_char2(c) ? c : Sign(e)*c
 
 convert(::Type{SignExp{T}}, n::Number) where T = SignExp{T}(n)
 
@@ -474,13 +474,13 @@ for op in (:(+), :(-), :(*))
         @eval $op(s::Sign{T}, a::SymbolicSignRing{T}) where T = add!($op(a), s)
     end
     @eval function $op(a::SymbolicSignRing{T}, c) where T
-        S = typeof(c)
-        if has_char2(S)
+        if has_char2(c)
             $op(ZZ2(a), c)
         elseif $op in (+, -) && c isa Number
             addmul(a, one(Sign{T}), $op(c))
         else
             R = coefftype(a)
+            S = typeof(c)
             invoke($op, Tuple{AbstractLinear{Sign{T},R}, S}, a, c)
         end
     end
@@ -489,12 +489,12 @@ end
 *(a::SymbolicSignRing, s::LCSign) = isone(s) ? a : -a
 
 function -(c, a::SymbolicSignRing{T,R}) where {T,R}
-    S = typeof(c)
-    if has_char2(S)
+    if has_char2(c)
         ZZ2(a) + c
     elseif c isa Number
         addmul!((-one(R)*one(c))*a, one(Sign{T}), c)
     else
+        S = typeof(c)
         invoke(-, Tuple{S, AbstractLinear{Sign{T},R}}, c, a)
     end
 end
