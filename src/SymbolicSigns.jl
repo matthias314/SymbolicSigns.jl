@@ -23,7 +23,6 @@ import Base: show, ==, hash, one, isone, iszero, iseven, isodd, +, -, *, ^,
     convert, length, iterate, eltype, copy, promote_rule
 
 using LinearCombinations: linear_convert
-using LinearCombinations: Sign as LCSign
 import LinearCombinations: Zero, termcoeff, withsign, sign_type, show_summand
 
 #
@@ -479,7 +478,7 @@ for op in (:(+), :(-), :(*))
     end
 end
 
-*(a::WithSigns, s::LCSign) = isone(s) ? a : -a
+*(a::WithSigns, s::LinearCombinations.Sign) = isone(s) ? a : -a
 
 function -(c, a::WithSigns{T,R}) where {T,R}
     if has_char2(c)
@@ -495,7 +494,7 @@ end
 convert(::Type{SR}, a::WithSigns{T}) where {T, SR<:WithSigns{T}} = linear_convert(SR, a)
 convert(::Type{SR}, s::Sign{T}) where {T, R, SR<:WithSigns{T,R}} = SR(s => one(R))
 convert(::Type{SR}, c::Number) where {T, SR<:WithSigns{T}} = SR(one(Sign{T}) => c)
-convert(::Type{SR}, s::LCSign) where {T, R, SR<:WithSigns{T,R}} = SR(one(Sign{T}) => convert(R, s))
+convert(::Type{SR}, s::LinearCombinations.Sign) where {T, R, SR<:WithSigns{T,R}} = SR(one(Sign{T}) => convert(R, s))
 
 function promote_rule(::Type{WithSigns{T,R}}, ::Type{S}) where {T,R,S}
     U = promote_type(R, S)
@@ -508,7 +507,7 @@ promote_rule(::Type{WithSigns{T,R}}, ::Type{WithSigns{T,S}}) where {T,R,S} = Wit
 # it's important that Sign{T} is again the second argument
 promote_rule(::Type{R}, ::Type{Sign{T}}) where {T,R} = has_char2(R) ? R : WithSigns{T,R}
 
-sign_type(::Type{DegSum{T}}) where T = WithSigns{T,LCSign}
-sign_type(::Type{Deg{T}}) where T = WithSigns{T,LCSign}
+sign_type(::Type{DegSum{T}}) where T = WithSigns{T,LinearCombinations.Sign}
+sign_type(::Type{Deg{T}}) where T = WithSigns{T,LinearCombinations.Sign}
 
 end # module
