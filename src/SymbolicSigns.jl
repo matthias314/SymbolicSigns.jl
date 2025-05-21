@@ -42,6 +42,7 @@ with no elements from `T` to represent the constant `1` as a degree term.
 
 The degree terms `Deg(x, y)` and `Deg(y, x)` are treated as equal,
 and `Deg(x, x)` is simplified to `Deg(x)`.
+Algebraic operations with degrees are done witgh `ZZ2` coefficients.
 
 See also [`DegSum`](@ref).
 
@@ -62,7 +63,7 @@ julia> dx*dy
 julia> dx*dy == Deg(:x, :y)
 true
 
-julia> dx*dy == Deg(:y, :x)   # order doesn't matter
+julia> dx*dy == dy*dx   # order doesn't matter
 true
 
 julia> dx*dx   # note the simplification
@@ -77,6 +78,14 @@ julia> d1 = Deg{Symbol}()
 
 julia> d1 == one(dx)
 true
+
+julia> dx+dx
+Linear{Deg{Symbol}, Modulo2.ZZ2} with 0 terms:
+0
+
+julia> (dx+dy)^2
+Linear{Deg{Symbol}, Modulo2.ZZ2} with 2 terms:
+|x|+|y|
 ```
 """
 struct Deg{T}
@@ -194,7 +203,7 @@ end
 #
 
 """
-    DegSum{T} == Linear{Deg{T}, ZZ2}
+    const DegSum{T} = Linear{Deg{T}, ZZ2}
 
 A *sign exponent* is a linear combination of degree terms with coefficients in `ZZ2`.
 
@@ -203,16 +212,15 @@ See also [`LinearCombinations.Linear`](https://matthias314.github.io/LinearCombi
 
 # Examples
 ```jldoctest
-julia> se = dx + dx*dy + 1
+julia> dx, dy, dz = Deg(:x), Deg(:y), Deg(:z);
+
+julia> e = dx + dx*dy + 1
 |x||y|+|x|+1
 
-julia> typeof(se) == DegSum{Symbol}
+julia> typeof(e) == DegSum{Symbol}
 true
 
-julia> se == DegSum(dx => 1, dx*dy => -1, Deg{Symbol}() => -1)
-true
-
-julia> DegSum(dx) == DegSum(dx => 1)   # note the short form
+julia> e == DegSum(dx => 1, dx*dy => -1, Deg{Symbol}() => -1)
 true
 ```
 """
@@ -256,12 +264,17 @@ convert(::Type{DegSum{T}}, n::Number) where T = DegSum{T}(n)
 """
     Sign{T}
 
-This is a wrapper around `DegSum{T}` that allows to use a multiplicative notation.
+    Sign(t::Deg)
+    Sign(e::DegSum)
 
-See also [`DegSum`](@ref), [`WithSigns`](@ref).
+Return the sign with exponent given by a degree or a degree sum.
+
+See also [`signexp`](@ref), [`DegSum`](@ref), [`WithSigns`](@ref).
 
 # Examples
 ```jldoctest
+julia> dx, dy = Deg(:x), Deg(:y);
+
 julia> s1 = Sign(dx + dx*dy)
 (-1)^(|x||y|+|x|)
 
@@ -305,6 +318,27 @@ end
 
 @struct_equal_hash Sign{T} where T
 
+"""
+    signexp(s::Sign) -> DegSum
+
+Return the exponent of the sign `s`.
+
+# Example
+```jldoctest
+julia> dx, dy, dz = Deg(:x), Deg(:y), Deg(:z);
+
+julia> e = dx + dy*dz
+Linear{Deg{Symbol}, Modulo2.ZZ2} with 2 terms:
+|x|+|y||z|
+
+julia> s = Sign(e)
+(-1)^(|x|+|y||z|)
+
+julia> signexp(s)
+Linear{Deg{Symbol}, Modulo2.ZZ2} with 2 terms:
+|x|+|y||z|
+```
+"""
 signexp(s::Sign) = s.e
 
 convert(::Type{S}, s::Sign) where S <: Sign = S(signexp(s))
@@ -414,8 +448,7 @@ See also [`LinearCombinations.Linear`](https://matthias314.github.io/LinearCombi
 
 # Examples
 ```jldoctest
-julia> dx, dy = Deg(:x), Deg(:y)
-(|x|, |y|)
+julia> dx, dy = Deg(:x), Deg(:y);
 
 julia> s1, s2 = Sign(dx + dx*dy), Sign(dy + 1)
 ((-1)^(|x||y|+|x|), (-1)^(|y|+1))
