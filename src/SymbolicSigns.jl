@@ -15,7 +15,7 @@ See also [`WithSigns`](@ref), [`Deg`](@ref).
 """
 module SymbolicSigns
 
-export Deg, SignExp, Sign, signexp, WithSigns
+export Deg, DegSum, Sign, signexp, WithSigns
 
 using StructEqualHash, LinearCombinations, Modulo2
 
@@ -44,7 +44,7 @@ with no elements from `T` to represent the constant `1` as a degree term.
 The degree terms `Deg(x, y)` and `Deg(y, x)` are treated as equal,
 and `Deg(x, x)` is simplified to `Deg(x)`.
 
-See also [`SignExp`](@ref).
+See also [`DegSum`](@ref).
 
 # Examples
 ```jldoctest
@@ -191,11 +191,11 @@ end
 @linear_broadcastable Deg
 
 #
-# SignExp
+# DegSum
 #
 
 """
-    SignExp{T} == Linear{Deg{T}, ZZ2}
+    DegSum{T} == Linear{Deg{T}, ZZ2}
 
 A *sign exponent* is a linear combination of degree terms with coefficients in `ZZ2`.
 
@@ -207,54 +207,54 @@ See also [`LinearCombinations.Linear`](https://matthias314.github.io/LinearCombi
 julia> se = dx + dx*dy + 1
 |x||y|+|x|+1
 
-julia> typeof(se) == SignExp{Symbol}
+julia> typeof(se) == DegSum{Symbol}
 true
 
-julia> se == SignExp(dx => 1, dx*dy => -1, Deg{Symbol}() => -1)
+julia> se == DegSum(dx => 1, dx*dy => -1, Deg{Symbol}() => -1)
 true
 
-julia> SignExp(dx) == SignExp(dx => 1)   # note the short form
+julia> DegSum(dx) == DegSum(dx => 1)   # note the short form
 true
 ```
 """
-const SignExp{T} = Linear{Deg{T}, ZZ2}
+const DegSum{T} = Linear{Deg{T}, ZZ2}
 
-SignExp(t::Pair{Deg{T}}...) where T = SignExp{T}(t)
-SignExp(t::Deg{T}...) where T = SignExp{T}(map(u -> u => one(ZZ2), t))
-SignExp{T}(n::Number) where T = Linear(one(Deg{T}) => ZZ2(n))
+DegSum(t::Pair{Deg{T}}...) where T = DegSum{T}(t)
+DegSum(t::Deg{T}...) where T = DegSum{T}(map(u -> u => one(ZZ2), t))
+DegSum{T}(n::Number) where T = Linear(one(Deg{T}) => ZZ2(n))
 
 +(t::Deg) = t
 -(t::Deg) = t
 
 +(t::Deg{T}, u::Deg{T}) where T =
-    t == u ? zero(SignExp{T}) : SignExp{T}(t => one(ZZ2), u => one(ZZ2))
+    t == u ? zero(DegSum{T}) : DegSum{T}(t => one(ZZ2), u => one(ZZ2))
 
 function +(t::Deg, n::Number)
     u = one(t)
-    t == u ? SignExp(t => ZZ2(n+1)) : SignExp(t => one(ZZ2), u => ZZ2(n))
+    t == u ? DegSum(t => ZZ2(n+1)) : DegSum(t => one(ZZ2), u => ZZ2(n))
 end
 
-+(e::SignExp{T}, n::Number) where T = addmul(e, one(Deg{T}), ZZ2(n))
++(e::DegSum{T}, n::Number) where T = addmul(e, one(Deg{T}), ZZ2(n))
 
 +(n::Number, t::Deg) = t+n
-+(n::Number, e::SignExp) = e+n
++(n::Number, e::DegSum) = e+n
 
 -(t::Deg{T}, u::Deg{T}) where T = t+u
 -(t::Deg, n::Number) = t+n
--(e::SignExp, n::Number) = e+n
+-(e::DegSum, n::Number) = e+n
 -(n::Number, t::Deg) = t+n
--(n::Number, e::SignExp) = e+n
+-(n::Number, e::DegSum) = e+n
 
 *(::Deg, ::Zero) = Zero()
 *(::Zero, ::Deg) = Zero()
-*(::SignExp, ::Zero) = Zero()
-*(::Zero, ::SignExp) = Zero()
-*(c::Number, t::Deg) = SignExp(t => c)
+*(::DegSum, ::Zero) = Zero()
+*(::Zero, ::DegSum) = Zero()
+*(c::Number, t::Deg) = DegSum(t => c)
 *(t::Deg, c::Number) = c*t
 
-withsign(e::Union{SignExp,Deg}, c) = has_char2(c) ? c : Sign(e)*c
+withsign(e::Union{DegSum,Deg}, c) = has_char2(c) ? c : Sign(e)*c
 
-convert(::Type{SignExp{T}}, n::Number) where T = SignExp{T}(n)
+convert(::Type{DegSum{T}}, n::Number) where T = DegSum{T}(n)
 
 #
 # Sign
@@ -263,9 +263,9 @@ convert(::Type{SignExp{T}}, n::Number) where T = SignExp{T}(n)
 """
     Sign{T}
 
-This is a wrapper around `SignExp{T}` that allows to use a multiplicative notation.
+This is a wrapper around `DegSum{T}` that allows to use a multiplicative notation.
 
-See also [`SignExp`](@ref), [`WithSigns`](@ref).
+See also [`DegSum`](@ref), [`WithSigns`](@ref).
 
 # Examples
 ```jldoctest
@@ -286,10 +286,10 @@ julia> convert(ZZ2, s1)
 ```
 """
 struct Sign{T}
-    e::SignExp{T}
+    e::DegSum{T}
 end
 
-Sign(args...) = Sign(SignExp(args...))
+Sign(args...) = Sign(DegSum(args...))
 
 function show(io::IO, s::Sign{T}) where T
     print(io, "Sign(")
@@ -340,7 +340,7 @@ iszero(::Sign) = false
 
 isone(s::Sign) = iszero(signexp(s))
 
-one(::Type{Sign{T}}) where T = Sign(zero(SignExp{T}))
+one(::Type{Sign{T}}) where T = Sign(zero(DegSum{T}))
 one(::T) where T <: Sign = one(T)
 
 *(s1::Sign{T}, s2::Sign{T}) where T = Sign(signexp(s1) + signexp(s2))
@@ -515,7 +515,7 @@ promote_rule(::Type{WithSigns{T,R}}, ::Type{WithSigns{T,S}}) where {T,R,S} = Wit
 # it's important that Sign{T} is again the second argument
 promote_rule(::Type{R}, ::Type{Sign{T}}) where {T,R} = has_char2(R) ? R : WithSigns{T,R}
 
-sign_type(::Type{SignExp{T}}) where T = WithSigns{T,LCSign}
+sign_type(::Type{DegSum{T}}) where T = WithSigns{T,LCSign}
 sign_type(::Type{Deg{T}}) where T = WithSigns{T,LCSign}
 
 end # module
