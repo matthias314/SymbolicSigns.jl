@@ -246,6 +246,8 @@ DegSum{T}(n::Number) where T = Linear(one(Deg{T}) => ZZ2(n))
 
 withsign(e::Union{DegSum,Deg}, c) = has_char2(c) ? c : Sign(e)*c
 
+convert(::Type{DegSum}, t::Deg) = +t
+convert(::Type{DegSum{T}}, t::Deg) where T = +convert(Deg{T}, t)
 convert(::Type{DegSum{T}}, n::Number) where T = DegSum{T}(n)
 
 #
