@@ -24,7 +24,7 @@ import Base: show, ==, hash, one, isone, iszero, iseven, isodd, +, -, *, ^,
 
 using LinearCombinations: linear_convert
 using LinearCombinations: Sign as LCSign
-import LinearCombinations: Zero, termcoeff, signed, sign_type, show_summand
+import LinearCombinations: Zero, termcoeff, withsign, sign_type, show_summand
 
 #
 # DegTerm
@@ -252,7 +252,7 @@ end
 *(c::Number, t::DegTerm) = SignExp(t => c)
 *(t::DegTerm, c::Number) = c*t
 
-signed(e::Union{SignExp,DegTerm}, c) = has_char2(c) ? c : Sign(e)*c
+withsign(e::Union{SignExp,DegTerm}, c) = has_char2(c) ? c : Sign(e)*c
 
 convert(::Type{SignExp{T}}, n::Number) where T = SignExp{T}(n)
 
