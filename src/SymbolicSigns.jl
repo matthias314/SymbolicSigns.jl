@@ -23,7 +23,7 @@ import Base: show, ==, hash, one, isone, iszero, iseven, isodd, +, -, *, ^,
     convert, length, iterate, eltype, copy, promote_rule
 
 using LinearCombinations: linear_convert
-import LinearCombinations: Zero, termcoeff, withsign, sign_type, show_summand
+import LinearCombinations: Zero, termcoeff, withsign, signtype, show_summand
 
 #
 # Deg
@@ -540,7 +540,7 @@ promote_rule(::Type{WithSigns{T,R}}, ::Type{WithSigns{T,S}}) where {T,R,S} = Wit
 # it's important that Sign{T} is again the second argument
 promote_rule(::Type{R}, ::Type{Sign{T}}) where {T,R} = has_char2(R) ? R : WithSigns{T,R}
 
-sign_type(::Type{DegSum{T}}) where T = WithSigns{T,LinearCombinations.Sign}
-sign_type(::Type{Deg{T}}) where T = WithSigns{T,LinearCombinations.Sign}
+signtype(::Type{DegSum{T}}) where T = WithSigns{T,LinearCombinations.Sign}
+signtype(::Type{Deg{T}}) where T = WithSigns{T,LinearCombinations.Sign}
 
 end # module
