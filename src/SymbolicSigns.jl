@@ -220,25 +220,17 @@ true
 const DegSum{T} = Linear{Deg{T}, ZZ2}
 
 DegSum(t::Pair{Deg{T}}...) where T = DegSum{T}(t)
-DegSum(t::Deg{T}...) where T = DegSum{T}(map(u -> u => one(ZZ2), t))
 DegSum{T}(n::Number) where T = Linear(one(Deg{T}) => ZZ2(n))
 
-+(t::Deg) = t
--(t::Deg) = t
-
-+(t::Deg{T}, u::Deg{T}) where T =
-    t == u ? zero(DegSum{T}) : DegSum{T}(t => one(ZZ2), u => one(ZZ2))
-
-function +(t::Deg, n::Number)
-    u = one(t)
-    t == u ? DegSum(t => ZZ2(n+1)) : DegSum(t => one(ZZ2), u => ZZ2(n))
-end
++(ts::Deg{T}...) where T = DegSum{T}(map(t -> t => one(ZZ2), ts))
++(t::Deg, n::Number) = isone(t) ? DegSum(t => ZZ2(n+1)) : DegSum(t => one(ZZ2), one(t) => ZZ2(n))
 
 +(e::DegSum{T}, n::Number) where T = addmul(e, one(Deg{T}), ZZ2(n))
 
 +(n::Number, t::Deg) = t+n
 +(n::Number, e::DegSum) = e+n
 
+-(t::Deg) = +t
 -(t::Deg{T}, u::Deg{T}) where T = t+u
 -(t::Deg, n::Number) = t+n
 -(e::DegSum, n::Number) = e+n
