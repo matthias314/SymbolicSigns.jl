@@ -4,18 +4,18 @@
 This package provides types to work with symbolic signs that often come up
 in differential homological algebra and other graded contexts. Specifically,
 given any commutative ring `R` and any type `T`, the package allows to define
-a new commutative ring `SymbolicSignRing{T,R}` that extends `R` by expressions
+a new commutative ring `WithSigns{T,R}` that extends `R` by expressions
 of the form `(-1)^|x|` and `(-1)^(|x|*|y|)` where `|x|` and `|y|` represent
 the symbolic degrees of `x::T` and `y::T`, respectively.
 
 The symbolic signs `(-1)^(|x|*|y|)` and `(-1)^(|y|*|x|)` are treated as equal,
 and `(-1)^(|x|*|x|)` is simplified to `(-1)^|x|`.
 
-See also [`SymbolicSignRing`](@ref), [`DegTerm`](@ref).
+See also [`WithSigns`](@ref), [`DegTerm`](@ref).
 """
 module SymbolicSigns
 
-export DegTerm, SignExp, Sign, signexp, SymbolicSignRing
+export DegTerm, SignExp, Sign, signexp, WithSigns
 
 using StructEqualHash, LinearCombinations, Modulo2
 
@@ -265,7 +265,7 @@ convert(::Type{SignExp{T}}, n::Number) where T = SignExp{T}(n)
 
 This is a wrapper around `SignExp{T}` that allows to use a multiplicative notation.
 
-See also [`SignExp`](@ref), [`SymbolicSignRing`](@ref).
+See also [`SignExp`](@ref), [`WithSigns`](@ref).
 
 # Examples
 ```jldoctest
@@ -327,10 +327,10 @@ iterate(s::Sign, state...) = iterate(signexp(s), state...)
 iszero(::Sign) = false
 
 +(s::Sign) = copy(s)
--(s::Sign{T}) where T = SymbolicSignRing{T}(s => -1)
+-(s::Sign{T}) where T = WithSigns{T}(s => -1)
 
-+(s::Sign{T}, t::Sign{T}) where T = SymbolicSignRing{T}(s => 1, t => 1)
--(s::Sign{T}, t::Sign{T}) where T = SymbolicSignRing{T}(s => 1, t => -1)
++(s::Sign{T}, t::Sign{T}) where T = WithSigns{T}(s => 1, t => 1)
+-(s::Sign{T}, t::Sign{T}) where T = WithSigns{T}(s => 1, t => -1)
 
 +(c, s::Sign{T}) where T = Linear(s => 1, one(Sign{T}) => c)
 +(s::Sign, c) = c+s
@@ -372,7 +372,7 @@ function show_summand(io::IO, s::Sign, cs)
 end
 
 #
-# SymbolicSignRing
+# WithSigns
 #
 
 """
@@ -411,7 +411,7 @@ function termcoeff(sc::Pair{Sign{T}}) where T
 end
 
 """
-    SymbolicSignRing{T,R} = Linear{Sign{T},R}
+    WithSigns{T,R} = Linear{Sign{T},R}
 
 This type extends the commutative ring `R` by elements of type `Sign{T}`.
 Elements are formal linear combinations with terms of type `Sign{T}` and
@@ -452,28 +452,28 @@ julia> a*b
 0
 ```
 """
-const SymbolicSignRing{T,R} = Linear{Sign{T},R}
+const WithSigns{T,R} = Linear{Sign{T},R}
 
-# needed because "SymbolicSignRing" means "SymbolicSignRing{T,R} where {T,R}"
-SymbolicSignRing(x::Pair{S}...) where S <: Sign = Linear{S}(x...)
+# needed because "WithSigns" means "WithSigns{T,R} where {T,R}"
+WithSigns(x::Pair{S}...) where S <: Sign = Linear{S}(x...)
 
-Modulo2.ZZ2(a::SymbolicSignRing) = sum(ZZ2, coeffs(a); init = zero(ZZ2))
+Modulo2.ZZ2(a::WithSigns) = sum(ZZ2, coeffs(a); init = zero(ZZ2))
 
-iseven(a::SymbolicSignRing) = isone(ZZ2(a))
-isodd(a::SymbolicSignRing) = iszero(ZZ2(a))
+iseven(a::WithSigns) = isone(ZZ2(a))
+isodd(a::WithSigns) = iszero(ZZ2(a))
 
-*(s::Sign{T}, c::R) where {T,R<:Number} = SymbolicSignRing{T,R}(s => c)
+*(s::Sign{T}, c::R) where {T,R<:Number} = WithSigns{T,R}(s => c)
 *(c::R, s::Sign{T}) where {T,R<:Number} = s*c
 
-*(a::SymbolicSignRing{T}, s::Sign{T}) where T = LinearCombinations.mul(a, s)
+*(a::WithSigns{T}, s::Sign{T}) where T = LinearCombinations.mul(a, s)
 
 for op in (:(+), :(-), :(*))
-    @eval $op(a::SymbolicSignRing, b::SymbolicSignRing) = invoke($op, Tuple{AbstractLinear, AbstractLinear}, a, b)
+    @eval $op(a::WithSigns, b::WithSigns) = invoke($op, Tuple{AbstractLinear, AbstractLinear}, a, b)
     if op in (:(+), :(-))
-        @eval $op(a::SymbolicSignRing{T,R}, s::Sign{T}) where {T,R} = addmul(a, s, $op(one(R)))
-        @eval $op(s::Sign{T}, a::SymbolicSignRing{T}) where T = add!($op(a), s)
+        @eval $op(a::WithSigns{T,R}, s::Sign{T}) where {T,R} = addmul(a, s, $op(one(R)))
+        @eval $op(s::Sign{T}, a::WithSigns{T}) where T = add!($op(a), s)
     end
-    @eval function $op(a::SymbolicSignRing{T}, c) where T
+    @eval function $op(a::WithSigns{T}, c) where T
         if has_char2(c)
             $op(ZZ2(a), c)
         elseif $op in (+, -) && c isa Number
@@ -486,9 +486,9 @@ for op in (:(+), :(-), :(*))
     end
 end
 
-*(a::SymbolicSignRing, s::LCSign) = isone(s) ? a : -a
+*(a::WithSigns, s::LCSign) = isone(s) ? a : -a
 
-function -(c, a::SymbolicSignRing{T,R}) where {T,R}
+function -(c, a::WithSigns{T,R}) where {T,R}
     if has_char2(c)
         ZZ2(a) + c
     elseif c isa Number
@@ -499,23 +499,23 @@ function -(c, a::SymbolicSignRing{T,R}) where {T,R}
     end
 end
 
-convert(::Type{SR}, a::SymbolicSignRing{T}) where {T, SR<:SymbolicSignRing{T}} = linear_convert(SR, a)
-convert(::Type{SR}, s::Sign{T}) where {T, R, SR<:SymbolicSignRing{T,R}} = SR(s => one(R))
-convert(::Type{SR}, c::Number) where {T, SR<:SymbolicSignRing{T}} = SR(one(Sign{T}) => c)
-convert(::Type{SR}, s::LCSign) where {T, R, SR<:SymbolicSignRing{T,R}} = SR(one(Sign{T}) => convert(R, s))
+convert(::Type{SR}, a::WithSigns{T}) where {T, SR<:WithSigns{T}} = linear_convert(SR, a)
+convert(::Type{SR}, s::Sign{T}) where {T, R, SR<:WithSigns{T,R}} = SR(s => one(R))
+convert(::Type{SR}, c::Number) where {T, SR<:WithSigns{T}} = SR(one(Sign{T}) => c)
+convert(::Type{SR}, s::LCSign) where {T, R, SR<:WithSigns{T,R}} = SR(one(Sign{T}) => convert(R, s))
 
-function promote_rule(::Type{SymbolicSignRing{T,R}}, ::Type{S}) where {T,R,S}
+function promote_rule(::Type{WithSigns{T,R}}, ::Type{S}) where {T,R,S}
     U = promote_type(R, S)
-    has_char2(S) ? U : SymbolicSignRing{T,U}
+    has_char2(S) ? U : WithSigns{T,U}
 end
 
-promote_rule(::Type{SymbolicSignRing{T,R}}, ::Type{Sign{T}}) where {T,R} = SymbolicSignRing{T,R}
-promote_rule(::Type{SymbolicSignRing{T,R}}, ::Type{SymbolicSignRing{T,S}}) where {T,R,S} = SymbolicSignRing{T,promote_type(R,S)}
+promote_rule(::Type{WithSigns{T,R}}, ::Type{Sign{T}}) where {T,R} = WithSigns{T,R}
+promote_rule(::Type{WithSigns{T,R}}, ::Type{WithSigns{T,S}}) where {T,R,S} = WithSigns{T,promote_type(R,S)}
 
 # it's important that Sign{T} is again the second argument
-promote_rule(::Type{R}, ::Type{Sign{T}}) where {T,R} = has_char2(R) ? R : SymbolicSignRing{T,R}
+promote_rule(::Type{R}, ::Type{Sign{T}}) where {T,R} = has_char2(R) ? R : WithSigns{T,R}
 
-sign_type(::Type{SignExp{T}}) where T = SymbolicSignRing{T,LCSign}
-sign_type(::Type{DegTerm{T}}) where T = SymbolicSignRing{T,LCSign}
+sign_type(::Type{SignExp{T}}) where T = WithSigns{T,LCSign}
+sign_type(::Type{DegTerm{T}}) where T = WithSigns{T,LCSign}
 
 end # module

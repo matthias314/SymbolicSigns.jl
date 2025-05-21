@@ -3,7 +3,7 @@
 This package provides types to work with symbolic signs that often come up
 in differential homological algebra and other graded contexts. Specifically,
 given any commutative ring `R` and any type `T`, the package allows to define
-a new commutative ring `SymbolicSignRing{T,R}` that extends `R` by expressions
+a new commutative ring `WithSigns{T,R}` that extends `R` by expressions
 of the form `(-1)^|x|` and `(-1)^(|x|*|y|)` where `|x|` and `|y|` represent
 the symbolic degrees of `x::T` and `y::T`, respectively.
 
@@ -51,7 +51,7 @@ a⊗c
 julia> b = swap(t)
 (-1)^(|a||c|)*c⊗a
 
-julia> coefftype(b) == SymbolicSignRing{Char,Int}
+julia> coefftype(b) == WithSigns{Char,Int}
 true
 
 julia> swap(b)
