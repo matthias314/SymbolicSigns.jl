@@ -318,10 +318,9 @@ iterate(s::Sign, state...) = iterate(signexp(s), state...)
 
 iszero(::Sign) = false
 
-+(s::Sign) = copy(s)
 -(s::Sign{T}) where T = WithSigns{T}(s => -1)
 
-+(s::Sign{T}, t::Sign{T}) where T = WithSigns{T}(s => 1, t => 1)
++(ss::Sign{T}...) where T = WithSigns{T}(map(s -> s => 1, ss))
 -(s::Sign{T}, t::Sign{T}) where T = WithSigns{T}(s => 1, t => -1)
 
 +(c, s::Sign{T}) where T = Linear(s => 1, one(Sign{T}) => c)
