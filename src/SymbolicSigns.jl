@@ -283,7 +283,7 @@ struct Sign{T}
     e::DegSum{T}
 end
 
-Sign(args...) = Sign(DegSum(args...))
+Sign(t::Deg) = Sign(convert(DegSum, t))
 
 function show(io::IO, s::Sign{T}) where T
     print(io, "Sign(")
