@@ -40,7 +40,7 @@ Below we will construct signs explicitly.
 ```julia
 julia> using LinearCombinations, SymbolicSigns
 
-julia> LinearCombinations.deg(x::Char) = DegTerm(x)
+julia> LinearCombinations.deg(x::Char) = Deg(x)
 
 julia> deg('a'), deg('c')
 (|a|, |c|)
@@ -77,17 +77,17 @@ julia> g(swap(t))
 ```
 We can also give `f` a symbolic degree.
 ```julia
-julia> LinearCombinations.deg(::typeof(f)) = DegTerm('f')
+julia> LinearCombinations.deg(::typeof(f)) = Deg('f')
 
 julia> g(t)
 (-1)^(|a||f|)*A⊗C
 ```
 Here is an example showing how sign expressions are actually built.
 ```julia
-julia> da = DegTerm('a')
+julia> da = Deg('a')
 |a|
 
-julia> dc = DegTerm('c')
+julia> dc = Deg('c')
 |c|
 
 julia> e = dc + da*dc

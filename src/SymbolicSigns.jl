@@ -11,11 +11,11 @@ the symbolic degrees of `x::T` and `y::T`, respectively.
 The symbolic signs `(-1)^(|x|*|y|)` and `(-1)^(|y|*|x|)` are treated as equal,
 and `(-1)^(|x|*|x|)` is simplified to `(-1)^|x|`.
 
-See also [`WithSigns`](@ref), [`DegTerm`](@ref).
+See also [`WithSigns`](@ref), [`Deg`](@ref).
 """
 module SymbolicSigns
 
-export DegTerm, SignExp, Sign, signexp, WithSigns
+export Deg, SignExp, Sign, signexp, WithSigns
 
 using StructEqualHash, LinearCombinations, Modulo2
 
@@ -27,74 +27,74 @@ using LinearCombinations: Sign as LCSign
 import LinearCombinations: Zero, termcoeff, withsign, sign_type, show_summand
 
 #
-# DegTerm
+# Deg
 #
 
 """
-    DegTerm{T}
+    Deg{T}
 
-    DegTerm{T}() where T
-    DegTerm(x::T) where T
-    DegTerm(x::T, y::T) where T
+    Deg{T}() where T
+    Deg(x::T) where T
+    Deg(x::T, y::T) where T
 
 This type represents a *degree term* representing the degree of an element from `T`
 or the product of the degrees of two elements from `T`. There is also a version
 with no elements from `T` to represent the constant `1` as a degree term.
 
-The degree terms `DegTerm(x, y)` and `DegTerm(y, x)` are treated as equal,
-and `DegTerm(x, x)` is simplified to `DegTerm(x)`.
+The degree terms `Deg(x, y)` and `Deg(y, x)` are treated as equal,
+and `Deg(x, x)` is simplified to `Deg(x)`.
 
 See also [`SignExp`](@ref).
 
 # Examples
 ```jldoctest
-julia> dx = DegTerm(:x)
+julia> dx = Deg(:x)
 |x|
 
 julia> typeof(dx)
-DegTerm{Symbol}
+Deg{Symbol}
 
-julia> dy = DegTerm(:y)
+julia> dy = Deg(:y)
 |y|
 
 julia> dx*dy
 |x||y|
 
-julia> dx*dy == DegTerm(:x, :y)
+julia> dx*dy == Deg(:x, :y)
 true
 
-julia> dx*dy == DegTerm(:y, :x)   # order doesn't matter
+julia> dx*dy == Deg(:y, :x)   # order doesn't matter
 true
 
 julia> dx*dx   # note the simplification
 |x|
 
-julia> dz = DegTerm(:z); dx*dy*dz
-ERROR: cannot multiply two DegTerm's with more than 2 factors in total
+julia> dz = Deg(:z); dx*dy*dz
+ERROR: cannot multiply two Deg's with more than 2 factors in total
 [...]
 
-julia> d1 = DegTerm{Symbol}()
+julia> d1 = Deg{Symbol}()
 1
 
 julia> d1 == one(dx)
 true
 ```
 """
-struct DegTerm{T}
+struct Deg{T}
     n::Int8
     x::T
     y::T
-    DegTerm{T}(x, y) where T = x == y ? new{T}(1, x) : new{T}(2, x, y)
+    Deg{T}(x, y) where T = x == y ? new{T}(1, x) : new{T}(2, x, y)
     # do we need this test for equality in applications?
-    DegTerm{T}(x) where T = new{T}(1, x)
-    DegTerm{T}() where T = new{T}(0)
+    Deg{T}(x) where T = new{T}(1, x)
+    Deg{T}() where T = new{T}(0)
 end
 
-DegTerm(x::T...) where T = DegTerm{T}(x...)
+Deg(x::T...) where T = Deg{T}(x...)
 
-function show(io::IO, t::DegTerm{T}) where T
-    print(io, "DegTerm")
-    if get(io, :typeinfo, Any) != DegTerm{T} &&
+function show(io::IO, t::Deg{T}) where T
+    print(io, "Deg")
+    if get(io, :typeinfo, Any) != Deg{T} &&
             !((t.n == 1 && typeof(t.x) == T) || (t.n == 2 && typeof(t.x) == T && typeof(t.y) == T))
         print(io, '{', T, '}')
     end
@@ -106,7 +106,7 @@ function show(io::IO, t::DegTerm{T}) where T
     print(io, ')')
 end
 
-function show(io::IO, ::MIME"text/plain", t::DegTerm)
+function show(io::IO, ::MIME"text/plain", t::Deg)
     if t.n == 2
         xr = string(t.x)
         yr = string(t.y)
@@ -122,7 +122,7 @@ function show(io::IO, ::MIME"text/plain", t::DegTerm)
     end
 end
 
-function convert(::Type{D}, t::DegTerm) where D <: DegTerm
+function convert(::Type{D}, t::Deg) where D <: Deg
     if t isa D
         t
     elseif t.n == 0
@@ -134,11 +134,11 @@ function convert(::Type{D}, t::DegTerm) where D <: DegTerm
     end
 end
 
-length(t::DegTerm)::Int = t.n
+length(t::Deg)::Int = t.n
 
-eltype(t::DegTerm{T}) where T = T
+eltype(t::Deg{T}) where T = T
 
-function iterate(t::DegTerm, i = 1)
+function iterate(t::Deg, i = 1)
     if i > length(t)
         nothing
     elseif i == 1
@@ -148,7 +148,7 @@ function iterate(t::DegTerm, i = 1)
     end
 end
 
-function ==(t::DegTerm{T}, u::DegTerm{T}) where T
+function ==(t::Deg{T}, u::Deg{T}) where T
     if t.n != u.n
         false
     elseif t.n == 2
@@ -160,8 +160,8 @@ function ==(t::DegTerm{T}, u::DegTerm{T}) where T
     end
 end
 
-function hash(t::DegTerm, h::UInt)
-    h = StructEqualHash.typehash(DegTerm, h)
+function hash(t::Deg, h::UInt)
+    h = StructEqualHash.typehash(Deg, h)
     if t.n == 2
         h ⊻ hash(t.x) ⊻ hash(t.y)
     elseif t.n == 1
@@ -171,36 +171,36 @@ function hash(t::DegTerm, h::UInt)
     end
 end
 
-isone(t::DegTerm) = iszero(length(t))
+isone(t::Deg) = iszero(length(t))
 
-one(::Type{T}) where T <: DegTerm = T()
-one(::T) where T <: DegTerm = one(T)
+one(::Type{T}) where T <: Deg = T()
+one(::T) where T <: Deg = one(T)
 
-function *(t::DegTerm{T}, u::DegTerm{T}) where T
+function *(t::Deg{T}, u::Deg{T}) where T
     if t.n == 1 && u.n == 1
-        DegTerm(t.x, u.x)
+        Deg(t.x, u.x)
     elseif t.n == 0
         u
     elseif u.n == 0
         t
     else
-        error("cannot multiply two DegTerm's with more than 2 factors in total")
+        error("cannot multiply two Deg's with more than 2 factors in total")
     end
 end
 
-@linear_broadcastable DegTerm
+@linear_broadcastable Deg
 
 #
 # SignExp
 #
 
 """
-    SignExp{T} == Linear{DegTerm{T}, ZZ2}
+    SignExp{T} == Linear{Deg{T}, ZZ2}
 
 A *sign exponent* is a linear combination of degree terms with coefficients in `ZZ2`.
 
 See also [`LinearCombinations.Linear`](https://matthias314.github.io/LinearCombinations.jl/stable/linear/#LinearCombinations.Linear),
-`Modulo2.ZZ2`, [`DegTerm`](@ref), [`Sign`](@ref).
+`Modulo2.ZZ2`, [`Deg`](@ref), [`Sign`](@ref).
 
 # Examples
 ```jldoctest
@@ -210,49 +210,49 @@ julia> se = dx + dx*dy + 1
 julia> typeof(se) == SignExp{Symbol}
 true
 
-julia> se == SignExp(dx => 1, dx*dy => -1, DegTerm{Symbol}() => -1)
+julia> se == SignExp(dx => 1, dx*dy => -1, Deg{Symbol}() => -1)
 true
 
 julia> SignExp(dx) == SignExp(dx => 1)   # note the short form
 true
 ```
 """
-const SignExp{T} = Linear{DegTerm{T}, ZZ2}
+const SignExp{T} = Linear{Deg{T}, ZZ2}
 
-SignExp(t::Pair{DegTerm{T}}...) where T = SignExp{T}(t)
-SignExp(t::DegTerm{T}...) where T = SignExp{T}(map(u -> u => one(ZZ2), t))
-SignExp{T}(n::Number) where T = Linear(one(DegTerm{T}) => ZZ2(n))
+SignExp(t::Pair{Deg{T}}...) where T = SignExp{T}(t)
+SignExp(t::Deg{T}...) where T = SignExp{T}(map(u -> u => one(ZZ2), t))
+SignExp{T}(n::Number) where T = Linear(one(Deg{T}) => ZZ2(n))
 
-+(t::DegTerm) = t
--(t::DegTerm) = t
++(t::Deg) = t
+-(t::Deg) = t
 
-+(t::DegTerm{T}, u::DegTerm{T}) where T =
++(t::Deg{T}, u::Deg{T}) where T =
     t == u ? zero(SignExp{T}) : SignExp{T}(t => one(ZZ2), u => one(ZZ2))
 
-function +(t::DegTerm, n::Number)
+function +(t::Deg, n::Number)
     u = one(t)
     t == u ? SignExp(t => ZZ2(n+1)) : SignExp(t => one(ZZ2), u => ZZ2(n))
 end
 
-+(e::SignExp{T}, n::Number) where T = addmul(e, one(DegTerm{T}), ZZ2(n))
++(e::SignExp{T}, n::Number) where T = addmul(e, one(Deg{T}), ZZ2(n))
 
-+(n::Number, t::DegTerm) = t+n
++(n::Number, t::Deg) = t+n
 +(n::Number, e::SignExp) = e+n
 
--(t::DegTerm{T}, u::DegTerm{T}) where T = t+u
--(t::DegTerm, n::Number) = t+n
+-(t::Deg{T}, u::Deg{T}) where T = t+u
+-(t::Deg, n::Number) = t+n
 -(e::SignExp, n::Number) = e+n
--(n::Number, t::DegTerm) = t+n
+-(n::Number, t::Deg) = t+n
 -(n::Number, e::SignExp) = e+n
 
-*(::DegTerm, ::Zero) = Zero()
-*(::Zero, ::DegTerm) = Zero()
+*(::Deg, ::Zero) = Zero()
+*(::Zero, ::Deg) = Zero()
 *(::SignExp, ::Zero) = Zero()
 *(::Zero, ::SignExp) = Zero()
-*(c::Number, t::DegTerm) = SignExp(t => c)
-*(t::DegTerm, c::Number) = c*t
+*(c::Number, t::Deg) = SignExp(t => c)
+*(t::Deg, c::Number) = c*t
 
-withsign(e::Union{SignExp,DegTerm}, c) = has_char2(c) ? c : Sign(e)*c
+withsign(e::Union{SignExp,Deg}, c) = has_char2(c) ? c : Sign(e)*c
 
 convert(::Type{SignExp{T}}, n::Number) where T = SignExp{T}(n)
 
@@ -390,7 +390,7 @@ See also [`LinearCombinations.termcoeff`](https://matthias314.github.io/LinearCo
 ```jldoctest
 julia> using LinearCombinations: termcoeff
 
-julia> dx = DegTerm(:x)
+julia> dx = Deg(:x)
 |x|
 
 julia> termcoeff(Sign(dx) => 2)
@@ -402,7 +402,7 @@ julia> termcoeff(Sign(dx+1) => 2)
 """
 function termcoeff(sc::Pair{Sign{T}}) where T
     s, c = sc
-    x = DegTerm{T}()
+    x = Deg{T}()
     if isone(s.e[x])
         Sign(addmul(s.e, x, one(ZZ2))) => -c
     else
@@ -422,7 +422,7 @@ See also [`LinearCombinations.Linear`](https://matthias314.github.io/LinearCombi
 
 # Examples
 ```jldoctest
-julia> dx, dy = DegTerm(:x), DegTerm(:y)
+julia> dx, dy = Deg(:x), Deg(:y)
 (|x|, |y|)
 
 julia> s1, s2 = Sign(dx + dx*dy), Sign(dy + 1)
@@ -516,6 +516,6 @@ promote_rule(::Type{WithSigns{T,R}}, ::Type{WithSigns{T,S}}) where {T,R,S} = Wit
 promote_rule(::Type{R}, ::Type{Sign{T}}) where {T,R} = has_char2(R) ? R : WithSigns{T,R}
 
 sign_type(::Type{SignExp{T}}) where T = WithSigns{T,LCSign}
-sign_type(::Type{DegTerm{T}}) where T = WithSigns{T,LCSign}
+sign_type(::Type{Deg{T}}) where T = WithSigns{T,LCSign}
 
 end # module
