@@ -22,8 +22,7 @@ using StructEqualHash, LinearCombinations, Modulo2
 import Base: show, ==, hash, one, isone, iszero, iseven, isodd, +, -, *, ^,
     convert, length, iterate, eltype, copy, promote_rule
 
-using LinearCombinations: linear_convert
-import LinearCombinations: Zero, termcoeff, withsign, signtype, show_summand
+using LinearCombinations: Zero, linear_convert
 
 #
 # Deg
@@ -251,7 +250,7 @@ DegSum{T}(n::Number) where T = Linear(one(Deg{T}) => ZZ2(n))
 *(c::Number, t::Deg) = DegSum(t => c)
 *(t::Deg, c::Number) = c*t
 
-withsign(e::Union{DegSum,Deg}, c) = has_char2(c) ? c : Sign(e)*c
+LinearCombinations.withsign(e::Union{DegSum,Deg}, c) = has_char2(c) ? c : Sign(e)*c
 
 convert(::Type{DegSum}, t::Deg) = +t
 convert(::Type{DegSum{T}}, t::Deg) where T = +convert(Deg{T}, t)
@@ -390,7 +389,7 @@ isodd(::Sign) = false
 
 @linear_broadcastable Sign
 
-function show_summand(io::IO, s::Sign, cs)
+function LinearCombinations.show_summand(io::IO, s::Sign, cs)
     show(io, MIME"text/plain"(), cs)
     isone(s) && return
     print(io, '*')
@@ -426,7 +425,7 @@ julia> termcoeff(Sign(dx+1) => 2)
 (-1)^(|x|) => -2
 ```
 """
-function termcoeff(sc::Pair{Sign{T}}) where T
+function LinearCombinations.termcoeff(sc::Pair{Sign{T}}) where T
     s, c = sc
     x = Deg{T}()
     if isone(s.e[x])
@@ -540,7 +539,7 @@ promote_rule(::Type{WithSigns{T,R}}, ::Type{WithSigns{T,S}}) where {T,R,S} = Wit
 # it's important that Sign{T} is again the second argument
 promote_rule(::Type{R}, ::Type{Sign{T}}) where {T,R} = has_char2(R) ? R : WithSigns{T,R}
 
-signtype(::Type{DegSum{T}}) where T = WithSigns{T,LinearCombinations.Sign}
-signtype(::Type{Deg{T}}) where T = WithSigns{T,LinearCombinations.Sign}
+LinearCombinations.signtype(::Type{DegSum{T}}) where T = WithSigns{T,LinearCombinations.Sign}
+LinearCombinations.signtype(::Type{Deg{T}}) where T = WithSigns{T,LinearCombinations.Sign}
 
 end # module
