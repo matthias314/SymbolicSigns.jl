@@ -486,6 +486,19 @@ Modulo2.ZZ2(a::WithSigns) = sum(ZZ2, coeffs(a); init = zero(ZZ2))
 iseven(a::WithSigns) = isone(ZZ2(a))
 isodd(a::WithSigns) = iszero(ZZ2(a))
 
+function ==(a::WithSigns, b::Number)
+    if iszero(b)
+        iszero(a)
+    elseif length(a) != 1
+        false
+    else
+        s, c = first(a)
+        isone(s) && c == b
+    end
+end
+
+==(a::Number, b::WithSigns) = b == a
+
 *(s::Sign{T}, c::R) where {T,R<:Number} = WithSigns{T,R}(s => c)
 *(c::R, s::Sign{T}) where {T,R<:Number} = s*c
 
